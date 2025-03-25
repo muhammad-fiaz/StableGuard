@@ -10,6 +10,7 @@ dependencies = [
       "safetensors>=0.5",
       "opencv-python>=4.11.0.86",
       "pillow>=11.1.0",
+      "accelerate>=1.5.2",
 ]
 
 
