@@ -79,11 +79,11 @@ def classify_image(image, clip_model, clip_processor, vit_model, vit_processor):
         combined_confidence = (clip_confidence + vit_confidence) / 2
 
         if noise_level < 50:
-            classification = "AI-Generated"
+            classification = "AI-Generated or Heavily Processed Content"
         elif 50 <= noise_level < 60:
             classification = "Likely Real Content (Possibly AI-Generated)"
         else:
-            classification = "Real Content"
+            classification = "Real Content (Unlikely AI-Generated)"
         print(f"📊 Noise Level: {noise_level:.2f}, Edge Density: {edge_density:.2f}, Pattern Score: {pattern_score:.2f}")
 
         print(f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)")
@@ -110,7 +110,9 @@ def process_video(video_path, clip_model, clip_processor, vit_model, vit_process
             if not ret:
                 break
             if frame_count % fps == 0:
+                timestamp = str(timedelta(seconds=frame_count // fps))
                 image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+                print(f"🕒 Analyzing frame at {timestamp}")
                 classify_image(image, clip_model, clip_processor, vit_model, vit_processor)
             frame_count += 1
 
@@ -119,7 +121,6 @@ def process_video(video_path, clip_model, clip_processor, vit_model, vit_process
         print(f"❌ Error processing video: {e}")
 
 def detect():
-    """Entry point for AI image and video detection."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, help="Path to an image file.")
     parser.add_argument("--video", type=str, help="Path to a video file.")
