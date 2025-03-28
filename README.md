@@ -30,7 +30,7 @@
 
 StableGuard is an AI-powered application designed to detect whether a given image or video is AI-generated, such as those created by stable diffusion models and other AI tools.
 
-> **Note:** This project is still in development and may not be fully functional.
+> **Note:** The detection results may not always be accurate. AI-generated content detection is an evolving field, and false positives or false negatives are possible. Always verify the results with additional methods or human judgment when necessary.
 
 ## Features
 - Detects AI-generated images and videos
