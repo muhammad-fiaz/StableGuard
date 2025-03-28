@@ -28,9 +28,6 @@
 
 </div>
 
-
-
-
 StableGuard is an AI-powered application designed to detect whether a given image or video is AI-generated, such as those created by stable diffusion models and other AI tools.
 
 > **Note:** This project is still in development and may not be fully functional.
@@ -38,35 +35,40 @@ StableGuard is an AI-powered application designed to detect whether a given imag
 ## Features
 - Detects AI-generated images and videos
 - Uses pre-trained machine learning models for detection
+- Provides confidence and accuracy metrics for classification
+- Supports both image and video processing
 
 ## Requirements
-- Python 3.9+
+- Python 3.11+
 - PyTorch
 - OpenCV
 - NumPy
 - Pillow
+- Transformers
+- Accelerate
+- Datasets
 
 ## Installation
 1. Clone the repository:
-    ```
+    ```sh
     git clone https://github.com/muhammad-fiaz/StableGuard.git
     cd StableGuard
     ```
 
 2. Install the required packages:
-    ```
+    ```sh
     pip install -r requirements.txt
     ```
 
 ## Usage
 1. To detect AI-generated images:
-    ```
-    python main.py --image path/to/image.jpg
+    ```sh
+    python detect.py --image path/to/image.jpg
     ```
 
 2. To detect AI-generated videos:
-    ```
-    python main.py --video path/to/video.mp4
+    ```sh
+    python detect.py --video path/to/video.mp4
     ```
 
 ## License
