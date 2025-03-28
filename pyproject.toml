@@ -2,17 +2,23 @@
 name = "stableguard"
 version = "0.0.0"
 description = "StableGuard is an AI detection tool used to identify AI-generated images and videos."
-requires-python = ">=3.12"
+requires-python = ">=3.11"
 dependencies = [
       "torch>=2.5.1",
       "torchvision>=0.20.1",
       "torchaudio>=2.5.1",
-      "safetensors>=0.5",
       "opencv-python>=4.11.0.86",
       "pillow>=11.1.0",
       "accelerate>=1.5.2",
+      "diffusers>=0.32.2",
+      "transformers>=4.50.2",
+      "datasets>=3.5.0",
+      "pillow-avif-plugin>=1.5.1",
+      "pillow-heif>=0.22.0",
 ]
 
+[tool.uv]
+upgrade = true
 
 [tool.uv.sources]
 torch = [
@@ -32,3 +38,15 @@ torchaudio = [
 name = "pytorch-cu126"
 url = "https://download.pytorch.org/whl/cu126"
 explicit = true
+
+
+[tool.uv.pip]
+output-file = "requirements.txt"
+require-hashes = true
+strict = true
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.5",
+    "ruff>=0.11.2",
+]
