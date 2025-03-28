@@ -1,5 +1,5 @@
 <div align="center">
-
+<img src="https://github.com/user-attachments/assets/23301758-515d-4a4e-8440-7066ea1f953f" alt="image" width="100" style="width: 100%; height: auto;">
   <h1>StableGuard</h1>
 </div>
 
