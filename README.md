@@ -1,5 +1,7 @@
 <div align="center">
-<img src="https://github.com/user-attachments/assets/23301758-515d-4a4e-8440-7066ea1f953f" alt="image" width="100" style="width: 100%; height: auto;">
+  
+![image](https://github.com/user-attachments/assets/b32c5050-a06b-4c07-92ff-790e317f2e92)
+  
   <h1>StableGuard</h1>
 </div>
 
@@ -47,6 +49,8 @@ StableGuard is an AI-powered application designed to detect whether a given imag
 - Transformers
 - Accelerate
 - Datasets
+- Gradio
+- Huggingface Models
 
 ## Installation
 1. Clone the repository:
@@ -69,6 +73,10 @@ StableGuard is an AI-powered application designed to detect whether a given imag
 2. To detect AI-generated videos:
     ```sh
     python detect.py --video path/to/video.mp4
+    ```
+3. To detect with GUI 
+    ```sh
+    python detect.py --gui
     ```
 
 ## License

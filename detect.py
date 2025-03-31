@@ -10,6 +10,7 @@ from datetime import timedelta
 from imwatermark import WatermarkDecoder
 import piexif
 import piexif.helper
+import gradio as gr
 
 try:
     import pillow_avif
@@ -166,38 +167,23 @@ def classify_image(
         else:
             classification = "Real Content (Unlikely AI-Generated)"
 
-        print(
-            f"📊 Noise Level: {noise_level:.2f}, Edge Density: {edge_density:.2f}, Pattern Score: {pattern_score:.2f}, Color Distribution: {color_distribution:.2f}"
-        )
-        print(f"📊 Metadata Info: {metadata_info}")
-        print(f"📊 Watermark Info: {watermark_info}")
+        # Prepare results for display
+        results = [
+            f"📊 Noise Level: {noise_level:.2f}, Edge Density: {edge_density:.2f}, Pattern Score: {pattern_score:.2f}, Color Distribution: {color_distribution:.2f}",
+            f"📊 Metadata Info: {metadata_info}",
+            f"📊 Watermark Info: {watermark_info}",
+            f"🤖 Prediction Results: {100 - combined_confidence:.2f}% confidence that the image is human-made, {combined_confidence:.2f}% confidence that it is AI-generated.",
+            f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)",
+        ]
 
-        human_confidence = 100 - combined_confidence
-        ai_confidence = combined_confidence
+        # Print results to console
+        for result in results:
+            print(result)
 
-        if noise_level < 50 or combined_confidence > 50:
-            print(
-                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
-            )
-            print(f"🔍 Verdict: {classification} (Confidence: {ai_confidence:.2f}%)")
-
-        elif 50 <= noise_level < 60:
-            print(
-                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
-            )
-            print(
-                f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)"
-            )
-        else:
-            print(
-                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
-            )
-            print(f"🔍 Verdict: {classification} (Confidence: {human_confidence:.2f}%)")
-
-        return classification, combined_confidence
+        return "\n".join(results)
     except Exception as e:
         print(f"❌ Error classifying image: {e}")
-        return "Unknown", 0
+        return "Error in classification"
 
 
 def process_image(image_path, clip_model, clip_processor, vit_model, vit_processor):
@@ -239,20 +225,41 @@ def process_video(video_path, clip_model, clip_processor, vit_model, vit_process
         print(f"❌ Error processing video: {e}")
 
 
+def classify_uploaded_image(
+    uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+):
+    image = Image.open(uploaded_image)
+    return classify_image(
+        image, uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+    )
+
+
 def detect():
     parser = argparse.ArgumentParser()
     parser.add_argument("--image", type=str, help="Path to an image file.")
     parser.add_argument("--video", type=str, help="Path to a video file.")
+    parser.add_argument("--gui", action="store_true", help="Start Gradio GUI")
     args = parser.parse_args()
 
     clip_model, clip_processor, vit_model, vit_processor = load_models()
 
-    if args.image:
+    if args.gui:
+        iface = gr.Interface(
+            fn=lambda uploaded_image: classify_uploaded_image(
+                uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+            ),
+            inputs=gr.Image(type="filepath"),
+            outputs=gr.Textbox(label="Results"),
+            title="AI-Generated Content Detection",
+            description="Upload an image to determine if it is AI-generated or real content.",
+        )
+        iface.launch()
+    elif args.image:
         process_image(args.image, clip_model, clip_processor, vit_model, vit_processor)
     elif args.video:
         process_video(args.video, clip_model, clip_processor, vit_model, vit_processor)
     else:
-        print("❌ No input provided! Use --image or --video.")
+        print("❌ No input provided! Use --image, --video, or --gui.")
 
 
 if __name__ == "__main__":
