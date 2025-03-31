@@ -50,6 +50,7 @@ StableGuard is an AI-powered application designed to detect whether a given imag
 - Accelerate
 - Datasets
 - Gradio
+- Huggingface Models
 
 ## Installation
 1. Clone the repository:
