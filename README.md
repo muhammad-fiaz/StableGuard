@@ -71,7 +71,7 @@ StableGuard is an AI-powered application designed to detect whether a given imag
     ```sh
     python detect.py --video path/to/video.mp4
     ```
-3. to detect with GUI 
+3. To detect with GUI 
     ```sh
     python detect.py --gui
     ```

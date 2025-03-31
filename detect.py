@@ -24,6 +24,7 @@ accelerator = Accelerator()
 # Initialize watermark decoder
 decoder = WatermarkDecoder("bytes", 32)
 
+
 def load_models():
     """Loads CLIP and ViT models for image feature extraction."""
     try:
@@ -49,6 +50,7 @@ def load_models():
         print(f"❌ Error loading models: {e}")
         exit(1)
 
+
 def load_image(image_path):
     """Opens an image and ensures it's in a supported format."""
     try:
@@ -58,10 +60,12 @@ def load_image(image_path):
         print(f"❌ Error loading image: {e}")
         return None
 
+
 def estimate_noise(image):
     """Estimates image noise using pixel standard deviation."""
     gray_image = np.array(image.convert("L"))
     return np.std(gray_image)
+
 
 def analyze_texture(image):
     """Analyzes texture complexity using edge detection."""
@@ -69,12 +73,14 @@ def analyze_texture(image):
     edges = cv2.Canny(gray_image, 50, 150)
     return np.sum(edges) / edges.size
 
+
 def detect_repeating_patterns(image):
     """Detects unnatural repeating patterns using Fourier Transform."""
     img_np = np.array(image.convert("L"))
     fft = np.fft.fft2(img_np)
     magnitude_spectrum = np.log1p(np.abs(np.fft.fftshift(fft)))
     return np.mean(magnitude_spectrum)
+
 
 def analyze_metadata(image_path):
     """Analyzes image metadata for AI generation clues."""
@@ -93,6 +99,7 @@ def analyze_metadata(image_path):
         print(f"❌ Error analyzing metadata: {e}")
         return "Metadata analysis failed"
 
+
 def analyze_color_distribution(image):
     """Analyzes color distribution for unnatural patterns."""
     np_image = np.array(image)
@@ -100,6 +107,7 @@ def analyze_color_distribution(image):
     hist_g, _ = np.histogram(np_image[:, :, 1], bins=256, range=(0, 256))
     hist_b, _ = np.histogram(np_image[:, :, 2], bins=256, range=(0, 256))
     return np.std(hist_r) + np.std(hist_g) + np.std(hist_b)
+
 
 def detect_watermark(image):
     """Detects the presence of invisible watermarks."""
@@ -117,7 +125,10 @@ def detect_watermark(image):
         print(f"❌ Error detecting watermark: {e}")
         return "No watermark detected"
 
-def classify_image(image, image_path, clip_model, clip_processor, vit_model, vit_processor):
+
+def classify_image(
+    image, image_path, clip_model, clip_processor, vit_model, vit_processor
+):
     """Determines whether an image is AI-generated, likely real, or real."""
     try:
         noise_level = estimate_noise(image)
@@ -127,13 +138,25 @@ def classify_image(image, image_path, clip_model, clip_processor, vit_model, vit
         color_distribution = analyze_color_distribution(image)
         watermark_info = detect_watermark(image)
 
-        clip_inputs = clip_processor(images=image, return_tensors="pt").to(accelerator.device)
-        clip_outputs = clip_model.get_image_features(**clip_inputs).detach().cpu().numpy()
-        clip_confidence = np.clip(np.interp(np.median(clip_outputs), [-0.3, 0.3], [0, 100]), 0, 100)
+        clip_inputs = clip_processor(images=image, return_tensors="pt").to(
+            accelerator.device
+        )
+        clip_outputs = (
+            clip_model.get_image_features(**clip_inputs).detach().cpu().numpy()
+        )
+        clip_confidence = np.clip(
+            np.interp(np.median(clip_outputs), [-0.3, 0.3], [0, 100]), 0, 100
+        )
 
-        vit_inputs = vit_processor(images=image, return_tensors="pt").to(accelerator.device)
-        vit_outputs = vit_model(**vit_inputs).last_hidden_state.mean(dim=1).detach().cpu().numpy()
-        vit_confidence = np.clip(np.interp(np.median(vit_outputs), [-0.3, 0.3], [0, 100]), 0, 100)
+        vit_inputs = vit_processor(images=image, return_tensors="pt").to(
+            accelerator.device
+        )
+        vit_outputs = (
+            vit_model(**vit_inputs).last_hidden_state.mean(dim=1).detach().cpu().numpy()
+        )
+        vit_confidence = np.clip(
+            np.interp(np.median(vit_outputs), [-0.3, 0.3], [0, 100]), 0, 100
+        )
 
         combined_confidence = (clip_confidence + vit_confidence) / 2
 
@@ -150,7 +173,7 @@ def classify_image(image, image_path, clip_model, clip_processor, vit_model, vit
             f"📊 Metadata Info: {metadata_info}",
             f"📊 Watermark Info: {watermark_info}",
             f"🤖 Prediction Results: {100 - combined_confidence:.2f}% confidence that the image is human-made, {combined_confidence:.2f}% confidence that it is AI-generated.",
-            f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)"
+            f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)",
         ]
 
         # Print results to console
@@ -162,11 +185,15 @@ def classify_image(image, image_path, clip_model, clip_processor, vit_model, vit
         print(f"❌ Error classifying image: {e}")
         return "Error in classification"
 
+
 def process_image(image_path, clip_model, clip_processor, vit_model, vit_processor):
     """Loads and classifies an image."""
     image = load_image(image_path)
     if image:
-        classify_image(image, image_path, clip_model, clip_processor, vit_model, vit_processor)
+        classify_image(
+            image, image_path, clip_model, clip_processor, vit_model, vit_processor
+        )
+
 
 def process_video(video_path, clip_model, clip_processor, vit_model, vit_processor):
     """Analyzes video frames to determine if content is AI-generated."""
@@ -183,16 +210,29 @@ def process_video(video_path, clip_model, clip_processor, vit_model, vit_process
                 timestamp = str(timedelta(seconds=frame_count // fps))
                 image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 print(f"🕒 Analyzing frame at {timestamp}")
-                classify_image(image, video_path, clip_model, clip_processor, vit_model, vit_processor)
+                classify_image(
+                    image,
+                    video_path,
+                    clip_model,
+                    clip_processor,
+                    vit_model,
+                    vit_processor,
+                )
             frame_count += 1
 
         cap.release()
     except Exception as e:
         print(f"❌ Error processing video: {e}")
 
-def classify_uploaded_image(uploaded_image, clip_model, clip_processor, vit_model, vit_processor):
+
+def classify_uploaded_image(
+    uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+):
     image = Image.open(uploaded_image)
-    return classify_image(image, uploaded_image, clip_model, clip_processor, vit_model, vit_processor)
+    return classify_image(
+        image, uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+    )
+
 
 def detect():
     parser = argparse.ArgumentParser()
@@ -205,11 +245,13 @@ def detect():
 
     if args.gui:
         iface = gr.Interface(
-            fn=lambda uploaded_image: classify_uploaded_image(uploaded_image, clip_model, clip_processor, vit_model, vit_processor),
-            inputs=gr.Image(type='filepath'),
+            fn=lambda uploaded_image: classify_uploaded_image(
+                uploaded_image, clip_model, clip_processor, vit_model, vit_processor
+            ),
+            inputs=gr.Image(type="filepath"),
             outputs=gr.Textbox(label="Results"),
             title="AI-Generated Content Detection",
-            description="Upload an image to determine if it is AI-generated or real content."
+            description="Upload an image to determine if it is AI-generated or real content.",
         )
         iface.launch()
     elif args.image:
@@ -218,6 +260,7 @@ def detect():
         process_video(args.video, clip_model, clip_processor, vit_model, vit_processor)
     else:
         print("❌ No input provided! Use --image, --video, or --gui.")
+
 
 if __name__ == "__main__":
     detect()
