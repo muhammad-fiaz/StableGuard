@@ -3,10 +3,13 @@ import torch
 import argparse
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ExifTags
 from accelerate import Accelerator
 from transformers import CLIPProcessor, CLIPModel, ViTImageProcessor, ViTModel
 from datetime import timedelta
+from imwatermark import WatermarkDecoder
+import piexif
+import piexif.helper
 
 try:
     import pillow_avif
@@ -16,6 +19,9 @@ except ImportError:
 
 # Accelerator for performance
 accelerator = Accelerator()
+
+# Initialize watermark decoder
+decoder = WatermarkDecoder("bytes", 32)
 
 
 def load_models():
@@ -30,11 +36,11 @@ def load_models():
             "openai/clip-vit-large-patch14", use_fast=False
         )
 
-        vit_model = ViTModel.from_pretrained("google/vit-base-patch16-224-in21k").to(
+        vit_model = ViTModel.from_pretrained("google/vit-large-patch32-224-in21k").to(
             accelerator.device
         )
         vit_processor = ViTImageProcessor.from_pretrained(
-            "google/vit-base-patch16-224-in21k"
+            "google/vit-large-patch32-224-in21k"
         )
 
         print("✅ Models are ready.")
@@ -75,12 +81,61 @@ def detect_repeating_patterns(image):
     return np.mean(magnitude_spectrum)
 
 
-def classify_image(image, clip_model, clip_processor, vit_model, vit_processor):
+def analyze_metadata(image_path):
+    """Analyzes image metadata for AI generation clues."""
+    try:
+        exif_data = piexif.load(image_path)
+        if piexif.ExifIFD.UserComment in exif_data["Exif"]:
+            exif_dict = piexif.helper.UserComment.load(
+                exif_data["Exif"][piexif.ExifIFD.UserComment]
+            )
+            if "Stable Diffusion" in exif_dict:
+                return "AI tool detected in metadata"
+        return "No AI tool detected in metadata"
+    except piexif._exceptions.InvalidImageDataError:
+        return "Invalid EXIF data"
+    except Exception as e:
+        print(f"❌ Error analyzing metadata: {e}")
+        return "Metadata analysis failed"
+
+
+def analyze_color_distribution(image):
+    """Analyzes color distribution for unnatural patterns."""
+    np_image = np.array(image)
+    hist_r, _ = np.histogram(np_image[:, :, 0], bins=256, range=(0, 256))
+    hist_g, _ = np.histogram(np_image[:, :, 1], bins=256, range=(0, 256))
+    hist_b, _ = np.histogram(np_image[:, :, 2], bins=256, range=(0, 256))
+    return np.std(hist_r) + np.std(hist_g) + np.std(hist_b)
+
+
+def detect_watermark(image):
+    """Detects the presence of invisible watermarks."""
+    try:
+        exif_data = piexif.load(image.info.get("exif", b""))
+        if piexif.ExifIFD.UserComment in exif_data["Exif"]:
+            watermark = piexif.helper.UserComment.load(
+                exif_data["Exif"][piexif.ExifIFD.UserComment]
+            )
+            return watermark
+        return "No watermark detected"
+    except piexif._exceptions.InvalidImageDataError:
+        return "Invalid EXIF data"
+    except Exception as e:
+        print(f"❌ Error detecting watermark: {e}")
+        return "No watermark detected"
+
+
+def classify_image(
+    image, image_path, clip_model, clip_processor, vit_model, vit_processor
+):
     """Determines whether an image is AI-generated, likely real, or real."""
     try:
         noise_level = estimate_noise(image)
         edge_density = analyze_texture(image)
         pattern_score = detect_repeating_patterns(image)
+        metadata_info = analyze_metadata(image_path)
+        color_distribution = analyze_color_distribution(image)
+        watermark_info = detect_watermark(image)
 
         clip_inputs = clip_processor(images=image, return_tensors="pt").to(
             accelerator.device
@@ -110,11 +165,35 @@ def classify_image(image, clip_model, clip_processor, vit_model, vit_processor):
             classification = "Likely Real Content (Possibly AI-Generated)"
         else:
             classification = "Real Content (Unlikely AI-Generated)"
-        print(
-            f"📊 Noise Level: {noise_level:.2f}, Edge Density: {edge_density:.2f}, Pattern Score: {pattern_score:.2f}"
-        )
 
-        print(f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)")
+        print(
+            f"📊 Noise Level: {noise_level:.2f}, Edge Density: {edge_density:.2f}, Pattern Score: {pattern_score:.2f}, Color Distribution: {color_distribution:.2f}"
+        )
+        print(f"📊 Metadata Info: {metadata_info}")
+        print(f"📊 Watermark Info: {watermark_info}")
+
+        human_confidence = 100 - combined_confidence
+        ai_confidence = combined_confidence
+
+        if noise_level < 50 or combined_confidence > 50:
+            print(
+                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
+            )
+            print(f"🔍 Verdict: {classification} (Confidence: {ai_confidence:.2f}%)")
+
+        elif 50 <= noise_level < 60:
+            print(
+                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
+            )
+            print(
+                f"🔍 Verdict: {classification} (Confidence: {combined_confidence:.2f}%)"
+            )
+        else:
+            print(
+                f"🤖 Prediction Results: {human_confidence:.2f}% confidence that the image is human-made, {ai_confidence:.2f}% confidence that it is AI-generated."
+            )
+            print(f"🔍 Verdict: {classification} (Confidence: {human_confidence:.2f}%)")
+
         return classification, combined_confidence
     except Exception as e:
         print(f"❌ Error classifying image: {e}")
@@ -125,7 +204,9 @@ def process_image(image_path, clip_model, clip_processor, vit_model, vit_process
     """Loads and classifies an image."""
     image = load_image(image_path)
     if image:
-        classify_image(image, clip_model, clip_processor, vit_model, vit_processor)
+        classify_image(
+            image, image_path, clip_model, clip_processor, vit_model, vit_processor
+        )
 
 
 def process_video(video_path, clip_model, clip_processor, vit_model, vit_processor):
@@ -144,7 +225,12 @@ def process_video(video_path, clip_model, clip_processor, vit_model, vit_process
                 image = Image.fromarray(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
                 print(f"🕒 Analyzing frame at {timestamp}")
                 classify_image(
-                    image, clip_model, clip_processor, vit_model, vit_processor
+                    image,
+                    video_path,
+                    clip_model,
+                    clip_processor,
+                    vit_model,
+                    vit_processor,
                 )
             frame_count += 1
 
