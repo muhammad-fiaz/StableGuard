@@ -241,7 +241,7 @@ tokenizers==0.21.1
     # via transformers
 tomlkit==0.13.2
     # via gradio
-torch==2.6.0+cu126
+torch==2.7.1
     # via
     #   stableguard (pyproject.toml)
     #   accelerate
