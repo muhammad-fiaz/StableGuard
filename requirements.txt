@@ -65,7 +65,7 @@ fsspec==2024.12.0
     #   gradio-client
     #   huggingface-hub
     #   torch
-gradio==5.23.1
+gradio==5.31.0
     # via stableguard (pyproject.toml)
 gradio-client==1.8.0
     # via gradio
