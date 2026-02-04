@@ -223,7 +223,7 @@ safetensors==0.5.3
     #   transformers
 semantic-version==2.10.0
     # via gradio
-setuptools==78.1.0
+setuptools==78.1.1
     # via torch
 shellingham==1.5.4
     # via typer
