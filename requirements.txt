@@ -48,7 +48,7 @@ fastapi==0.115.12
     # via gradio
 ffmpy==0.5.0
     # via gradio
-filelock==3.18.0
+filelock==3.20.3
     # via
     #   datasets
     #   diffusers
