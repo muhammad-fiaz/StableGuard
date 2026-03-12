@@ -139,7 +139,7 @@ opencv-python==4.11.0.86
     # via
     #   stableguard (pyproject.toml)
     #   invisible-watermark
-orjson==3.10.16
+orjson==3.11.6
     # via gradio
 packaging==24.2
     # via
