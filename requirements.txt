@@ -204,7 +204,7 @@ regex==2024.11.6
     # via
     #   diffusers
     #   transformers
-requests==2.32.4
+requests==2.33.0
     # via
     #   datasets
     #   diffusers
