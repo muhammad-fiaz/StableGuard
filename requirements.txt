@@ -183,7 +183,7 @@ pydantic-core==2.33.0
     # via pydantic
 pydub==0.25.1
     # via gradio
-pygments==2.19.1
+pygments==2.20.0
     # via rich
 python-dateutil==2.9.0.post0
     # via pandas
